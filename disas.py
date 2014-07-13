@@ -95,8 +95,24 @@ def disassemble_elf_code(data, sh_off, sh_size, sh_num):
 
             code_fmt = "%dB" % code_size
             code = (struct.unpack(code_fmt, code_chunk))
+
+            shellcode = ""
             for i in code:
-                print("%x" % i)
+                if i < 0xf:
+                    shellcode += "\\x0%x" % i
+                else:
+                    shellcode += "\\x%x" % i
+
+            print("Shellcode:")
+            print(shellcode, "\n")
+
+            try:
+                with open("output.sc", "w") as fp:
+                    fp.write(shellcode)
+            except:
+                print("Cannot open file to write")
+
+            print("Shellcode written to output.sc")
 
 
 def disassemble_elf(fname, opt):
