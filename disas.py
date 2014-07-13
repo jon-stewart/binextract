@@ -95,12 +95,12 @@ def disas_elf(fname, opt):
             if (sh_dict["sh_type"] == 1):
                 code_addr = sh_dict["sh_offset"]
                 code_size = sh_dict["sh_size"]
-                code = data[code_addr:code_addr + code_size]
+                code_chunk = data[code_addr:code_addr + code_size]
 
-                f = open("output", "w")
-                f.write(str(code))
-                f.close()
-
+                code_fmt = "%dB" % code_size
+                code = (struct.unpack(code_fmt, code_chunk))
+                for i in code:
+                    print("%x" % i)
 
 
 opt = [o for o in options if o in sys.argv]
