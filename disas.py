@@ -107,8 +107,8 @@ def disassemble_elf_code(data, sh_off, sh_size, sh_num):
             print(shellcode, "\n")
 
             try:
-                with open("output.sc", "w") as fp:
-                    fp.write(shellcode)
+                with open("/tmp/output.sc", "wb") as fp:
+                    fp.write(code_chunk)
             except:
                 print("Cannot open file to write")
 
