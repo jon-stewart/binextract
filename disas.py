@@ -49,9 +49,16 @@ def read_binary(fname):
 def disassemble_elf_header(data):
     '''
     '''
-    # TODO: e_entr, e_phoff, e_shoff are 8byte if 64bit file
-    elf_hdr_fmt = "4sBBBBB7sHHIIIIIHHHHHH"
-    elf_hdr = list(struct.unpack(elf_hdr_fmt, data[0:0x34]))
+    arch = struct.unpack("B", data[4:5])[0]
+
+    # 32 vs 64 bit
+    if arch == 1:
+        elf_hdr_fmt = "4sBBBBB7sHHIIIIIHHHHHH"
+        elf_hdr = list(struct.unpack(elf_hdr_fmt, data[0:0x34]))
+    else:
+        # e_entry, e_phoff and e_shoff are 8bytes in 64bit binary
+        elf_hdr_fmt = "4sBBBBB7sHHIQQQIHHHHHH"
+        elf_hdr = list(struct.unpack(elf_hdr_fmt, data[0:0x40]))
 
     # remove the unused e_ident[EI_PAD]
     del elf_hdr[6]
@@ -74,10 +81,14 @@ def disassemble_elf_header(data):
     return elf_dict
 
 
-def disassemble_elf_code(data, sh_off, sh_size, sh_num):
+def disassemble_elf_code(data, arch, sh_off, sh_size, sh_num):
     '''
     '''
-    sh_fmt = "IIIIIIIIII"
+    # 32 vs 64 bit
+    if arch == 1:
+        sh_fmt = "IIIIIIIIII"
+    else:
+        sh_fmt = "IIQQQQIIQQ"
 
     for i in range(0, sh_num):
         sh_hdr = struct.unpack(sh_fmt, data[sh_off:sh_off + sh_size])
@@ -132,10 +143,11 @@ def disassemble_elf(fname, opt):
             print("\t%s: %s" % (v[1], v[2]))
 
     elif opt == "-s":
+        arch    = elf_dict["e_ident_class"][2]
         sh_off  = elf_dict["e_shoff"][2]
         sh_size = elf_dict["e_shentsize"][2]
         sh_num  =  elf_dict["e_shnum"][2]
-        disassemble_elf_code(data, sh_off, sh_size, sh_num)
+        disassemble_elf_code(data, arch, sh_off, sh_size, sh_num)
 
 
 def help_text():
