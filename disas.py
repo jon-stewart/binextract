@@ -85,7 +85,7 @@ def disassemble_elf_code(data, arch, sh_off, sh_size, sh_num):
     '''
     '''
     # 32 vs 64 bit
-    if arch == 1:
+    if arch == "x86":
         sh_fmt = "IIIIIIIIII"
     else:
         sh_fmt = "IIQQQQIIQQ"
