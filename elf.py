@@ -3,10 +3,12 @@
 from collections import OrderedDict
 import struct
 
-fields = ["e_ident_mag", "e_ident_class", "e_ident_data", "e_ident_version",
-          "e_ident_osabi", "e_ident_abiversion", "e_type", "e_machine",
-          "e_version", "e_entry", "e_phoff", "e_shoff", "e_flags", "e_ehsize",
-          "e_phentsize", "e_phnum", "e_shentsize", "e_shnum", "e_shstrndx"]
+e_fields  = ["e_ident_mag", "e_ident_class", "e_ident_data", "e_ident_version",
+             "e_ident_osabi", "e_ident_abiversion", "e_type", "e_machine",
+             "e_version", "e_entry", "e_phoff", "e_shoff", "e_flags", "e_ehsize",
+             "e_phentsize", "e_phnum", "e_shentsize", "e_shnum", "e_shstrndx"]
+sh_fields = ["sh_name", "sh_type", "sh_flags", "sh_addr", "sh_offset",
+             "sh_size", "sh_link", "sh_info", "sh_addralign", "sh_entsize"]
 
 e_ident_class = ["", "x86", "x86_64"]
 e_ident_data  = ["", "little", "big"]
@@ -72,14 +74,72 @@ class Elf(object):
         del hdr_raw[6]
 
         hdr = OrderedDict()
-        for i,field in enumerate(fields):
+        for i,field in enumerate(e_fields):
             hdr[field] = hdr_raw[i]
 
+        # setting the following to meaningful values
         hdr["e_ident_class"] = e_ident_class[hdr["e_ident_class"]]
         hdr["e_ident_data"]  = e_ident_data[hdr["e_ident_data"]]
         hdr["e_ident_osabi"] = e_ident_osabi[hdr["e_ident_osabi"]]
         hdr["e_type"]        = e_type[hdr["e_type"]]
         hdr["e_machine"]     = e_machine[hdr["e_machine"]]
+
+        self.hdr = hdr
+
+
+    def shellcode(self):
+        '''
+        Extract the .text section from the elf.
+
+        The code is printed to the screen in typical shellcode format that can
+        be copy and pasted.
+
+        Write code out to file in binary format so it can be read and used by
+        other programs.
+        '''
+        if self.hdr["e_ident_data"] == "x86":
+            sh_fmt = "IIIIIIIIII"
+        else:
+            sh_fmt = "IIQQQQIIQQ"
+
+        sh_off  = self.hdr["e_shoff"]
+        sh_size = self.hdr["e_shentsize"]
+        sh_num  = self.hdr["e_shnum"]
+
+        for i in range(0, sh_num):
+            sh_hdr = struct.unpack(sh_fmt, self.data[sh_off:sh_off + sh_size])
+            sh_off += sh_size
+
+            sh_dict = {}
+            for k,v in enumerate(sh_fields):
+                sh_dict[v] = sh_hdr[k]
+
+            # if SHT_PROGBITS
+            if (sh_dict["sh_type"] == 1):
+                code_addr  = sh_dict["sh_offset"]
+                code_size  = sh_dict["sh_size"]
+                code_chunk = self.data[code_addr:code_addr + code_size]
+
+                code_fmt = "%dB" % code_size
+                code     = struct.unpack(code_fmt, code_chunk)
+
+                shellcode = ""
+                for i in code:
+                    if i < 0xf:
+                        shellcode += "\\x0%x" % i
+                    else:
+                        shellcode += "\\x%x" % i
+
+                print("Shellcode:")
+                print(shellcode, "\n")
+
+                try:
+                    with open("/tmp/output.sc", "wb") as fp:
+                        fp.write(code_chunk)
+                except:
+                    print("Cannot open file to write")
+
+                print("Shellcode written to /tmp/output.sc")
 
 
 if __name__ == "__main__":
@@ -87,3 +147,4 @@ if __name__ == "__main__":
 
     elf.signature()
     elf.header()
+    elf.shellcode()
