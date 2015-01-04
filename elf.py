@@ -50,9 +50,9 @@ class Elf(object):
         return sig.decode() == magic
 
 
-    def header(self):
+    def file_header(self):
         '''
-        Extract elf header.
+        Extract the elf file header.
 
         Set format and length based on 32/64bit field, extract and place in
         OrderedDict with associated field name for easy/clear access.
@@ -85,6 +85,29 @@ class Elf(object):
         hdr["e_machine"]     = e_machine[hdr["e_machine"]]
 
         self.hdr = hdr
+
+
+    def section_headers(self):
+        '''
+        Extract the section header information.
+        '''
+        if self.hdr["e_ident_data"] == "x86":
+            sh_fmt = "IIIIIIIIII"
+        else:
+            sh_fmt = "IIQQQQIIQQ"
+
+        sh_off  = self.hdr["e_shoff"]
+        sh_size = self.hdr["e_shentsize"]
+        sh_num  = self.hdr["e_shnum"]
+
+        for i in range(0, sh_num):
+            sh_hdr = struct.unpack(sh_fmt, self.data[sh_off:sh_off + sh_size])
+            sh_off += sh_size
+
+            sh_dict = OrderedDict()
+            for k,v in enumerate(sh_fields):
+                sh_dict[v] = sh_hdr[k]
+
 
 
     def shellcode(self):
@@ -146,5 +169,6 @@ if __name__ == "__main__":
     elf = Elf("ls.jon")
 
     elf.signature()
-    elf.header()
+    elf.file_header()
+    elf.section_headers()
     elf.shellcode()
