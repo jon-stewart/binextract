@@ -74,8 +74,8 @@ class Elf(object):
         del hdr_raw[6]
 
         hdr = OrderedDict()
-        for i,field in enumerate(e_fields):
-            hdr[field] = hdr_raw[i]
+        for k,v in enumerate(e_fields):
+            hdr[v] = hdr_raw[k]
 
         # setting the following to meaningful values
         hdr["e_ident_class"] = e_ident_class[hdr["e_ident_class"]]
@@ -110,18 +110,18 @@ class Elf(object):
             sh_hdr = struct.unpack(sh_fmt, self.data[sh_off:sh_off + sh_size])
             sh_off += sh_size
 
-            sh_dict = {}
+            sh_dict = OrderedDict()
             for k,v in enumerate(sh_fields):
                 sh_dict[v] = sh_hdr[k]
 
             # if SHT_PROGBITS
             if (sh_dict["sh_type"] == 1):
-                code_addr  = sh_dict["sh_offset"]
-                code_size  = sh_dict["sh_size"]
-                code_chunk = self.data[code_addr:code_addr + code_size]
+                offset = sh_dict["sh_offset"]
+                size   = sh_dict["sh_size"]
+                chunk  = self.data[offset:offset + size]
 
-                code_fmt = "%dB" % code_size
-                code     = struct.unpack(code_fmt, code_chunk)
+                c_fmt  = "%dB" % size
+                code   = struct.unpack(c_fmt, chunk)
 
                 shellcode = ""
                 for i in code:
