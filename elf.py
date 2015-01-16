@@ -90,6 +90,12 @@ class Elf(object):
     def section_headers(self):
         '''
         Extract the section header information.
+
+        e_shstrndx is the index of the shstrtab which contains the string
+        table of section header names.
+
+        Assign each of these names to the appropriate section header.  The
+        first string is the shstrtab, the rest assigned in order.
         '''
         if self.hdr["e_ident_data"] == "x86":
             sh_fmt = "IIIIIIIIII"
@@ -100,6 +106,8 @@ class Elf(object):
         sh_size = self.hdr["e_shentsize"]
         sh_num  = self.hdr["e_shnum"]
 
+        sh_hdrs = []
+
         for i in range(0, sh_num):
             sh_hdr = struct.unpack(sh_fmt, self.data[sh_off:sh_off + sh_size])
             sh_off += sh_size
@@ -108,6 +116,26 @@ class Elf(object):
             for k,v in enumerate(sh_fields):
                 sh_dict[v] = sh_hdr[k]
 
+            sh_hdrs.append(sh_dict)
+
+        stridx   = self.hdr["e_shstrndx"]
+        shstrtab = sh_hdrs[stridx]
+
+        offset = shstrtab["sh_offset"]
+        size   = shstrtab["sh_size"]
+        strtab = self.data[offset:offset + size]
+
+        # each string is divided by a NULL byte, need to remove the junk from list
+        strtab = [ s for s in strtab.decode().split("\x00") if len(s) > 0]
+
+        for k,v in enumerate(strtab):
+            # first string is the .shstrtab, assign to correct index
+            if k == 0:
+                sh_hdrs[stridx]["sh_name"] = v
+            else:
+                sh_hdrs[k]["sh_name"] = v
+
+        self.sh_hdrs = sh_hdrs
 
 
     def shellcode(self):
@@ -120,27 +148,10 @@ class Elf(object):
         Write code out to file in binary format so it can be read and used by
         other programs.
         '''
-        if self.hdr["e_ident_data"] == "x86":
-            sh_fmt = "IIIIIIIIII"
-        else:
-            sh_fmt = "IIQQQQIIQQ"
-
-        sh_off  = self.hdr["e_shoff"]
-        sh_size = self.hdr["e_shentsize"]
-        sh_num  = self.hdr["e_shnum"]
-
-        for i in range(0, sh_num):
-            sh_hdr = struct.unpack(sh_fmt, self.data[sh_off:sh_off + sh_size])
-            sh_off += sh_size
-
-            sh_dict = OrderedDict()
-            for k,v in enumerate(sh_fields):
-                sh_dict[v] = sh_hdr[k]
-
-            # if SHT_PROGBITS
-            if (sh_dict["sh_type"] == 1):
-                offset = sh_dict["sh_offset"]
-                size   = sh_dict["sh_size"]
+        for section in self.sh_hdrs:
+            if section["sh_name"] == ".text":
+                offset = section["sh_offset"]
+                size   = section["sh_size"]
                 chunk  = self.data[offset:offset + size]
 
                 c_fmt  = "%dB" % size
@@ -158,11 +169,11 @@ class Elf(object):
 
                 try:
                     with open("/tmp/output.sc", "wb") as fp:
-                        fp.write(code_chunk)
+                        fp.write(chunk)
+                        print("Shellcode written to /tmp/output.sc")
                 except:
                     print("Cannot open file to write")
 
-                print("Shellcode written to /tmp/output.sc")
 
 
 if __name__ == "__main__":
