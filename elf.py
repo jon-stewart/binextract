@@ -172,7 +172,7 @@ class Elf(object):
                         fp.write(chunk)
                         print("Shellcode written to /tmp/output.sc")
                 except:
-                    print("Cannot open file to write")
+                    print("[!] Cannot open file to write")
 
 
 
