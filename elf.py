@@ -10,6 +10,13 @@ e_fields  = ["e_ident_mag", "e_ident_class", "e_ident_data", "e_ident_version",
 sh_fields = ["sh_name", "sh_type", "sh_flags", "sh_addr", "sh_offset",
              "sh_size", "sh_link", "sh_info", "sh_addralign", "sh_entsize"]
 
+e_names = ["magic", "class", "endian", "orig elf", "system", "abi ver", "type",
+           "arch", "ver", "entry point", "prog header", "section header",
+           "flags", "header size", "prog header size", "number of prog headers",
+           "section header size", "number of section headers", "section header str tbl idx"]
+
+sh_names = ["name", "type", "flags", "addr", "offset", "size", "link", "info", "align", "entsize"]
+
 e_ident_class = ["", "x86", "x86_64"]
 e_ident_data  = ["", "little", "big"]
 e_ident_osabi = ["system v", "hp-ux", "netBSD", "linux", "solaris", "aix",
@@ -23,8 +30,9 @@ e_machine     = {0x2:"SPARC", 0x3:"x86", 0x8:"MIPS", 0x14:"PowerPC",
 class Elf(object):
 
     def __init__(self, fname):
-
-        self.data = self.read_binary(fname)
+        self.data    = self.read_binary(fname)
+        self.hdr     = None
+        self.sh_hdrs = None
 
 
     def read_binary(self, fname):
@@ -138,7 +146,24 @@ class Elf(object):
         self.sh_hdrs = sh_hdrs
 
 
-    def shellcode(self):
+    def print_file_header(self):
+        '''
+        '''
+        for k,v in enumerate(self.hdr.items()):
+            print(e_names[k], v[1])
+
+
+    def print_section_headers(self):
+        '''
+        '''
+        for section in self.sh_hdrs:
+            print("...")
+            for k,v in enumerate(section.items()):
+                print(sh_names[k], v[1])
+            print("-----")
+
+
+    def shellcode(self, sc_fname):
         '''
         Extract the .text section from the elf.
 
@@ -148,6 +173,9 @@ class Elf(object):
         Write code out to file in binary format so it can be read and used by
         other programs.
         '''
+
+        sc_path = "/tmp/{0}".format(sc_fname)
+
         for section in self.sh_hdrs:
             if section["sh_name"] == ".text":
                 offset = section["sh_offset"]
@@ -168,11 +196,11 @@ class Elf(object):
                 print(shellcode, "\n")
 
                 try:
-                    with open("/tmp/output.sc", "wb") as fp:
+                    with open(sc_path, "wb") as fp:
                         fp.write(chunk)
-                        print("Shellcode written to /tmp/output.sc")
+                        print("Shellcode written to {0}".format(sc_path))
                 except:
-                    print("[!] Cannot open file to write")
+                    print("[!] Cannot open file {0} to write".format(sc_path))
 
 
 
