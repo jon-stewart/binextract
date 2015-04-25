@@ -150,17 +150,25 @@ class Elf(object):
     def print_file_header(self):
         '''
         '''
+        hex_ls = ["section header"]
         for k,v in enumerate(self.hdr.items()):
-            print(e_names[k], v[1])
+            if e_names[k] in hex_ls:
+                print(e_names[k], hex(v[1]))
+            else:
+                print(e_names[k], v[1])
 
 
     def print_section_headers(self):
         '''
         '''
+        hex_ls = ["offset", "size"]
         for section in self.sh_hdrs:
             print("...")
             for k,v in enumerate(section.items()):
-                print(sh_names[k], v[1])
+                if sh_names[k] in hex_ls:
+                    print(sh_names[k], hex(v[1]))
+                else:
+                    print(sh_names[k], v[1])
             print("-----")
 
 
