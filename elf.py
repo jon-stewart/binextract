@@ -140,18 +140,22 @@ class Elf(object):
         # each string is divided by a NULL byte, need to remove the junk from list
         strtab = [ s for s in strtab.decode().split("\x00") if len(s) > 0]
 
-        # assign section header names
-        for k,v in enumerate(strtab):
-            # first string is the .shstrtab, assign to correct index
-            if k == 0:
-                sh_hdrs[stridx]["sh_name"] = v
-            else:
-                sh_hdrs[k]["sh_name"] = v
+        # sh_name holds an offset into the strtab for its string
+        strtab_dict = {}
+        idx = 1
+        for name in strtab:
+            strtab_dict[idx] = name
+            idx += len(name) + 1
+
+        # assign section header names - first is NULL
+        for sh in sh_hdrs[1:]:
+            idx = sh["sh_name"]
+            sh["sh_name"] = strtab_dict[idx]
 
         # assign section header types
-        for sh in sh_hdrs:
-            type_num = sh["sh_type"]
-            sh["sh_type"] = sh_types[type_num]
+        for hdr in sh_hdrs:
+            type_num = hdr["sh_type"]
+            hdr["sh_type"] = sh_types[type_num]
 
         self.sh_hdrs = sh_hdrs
 
