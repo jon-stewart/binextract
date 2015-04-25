@@ -1,4 +1,4 @@
 disas
 =====
 
-Simple disassembly of binaries
+Simple extraction of binary info
