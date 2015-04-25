@@ -18,6 +18,9 @@ e_names = ["magic", "class", "endian", "orig elf", "system", "abi ver", "type",
 
 sh_names = ["name", "type", "flags", "addr", "offset", "size", "link", "info", "align", "entsize"]
 
+sh_types = ["NULL", "PROGBITS", "SYMTAB", "STRTAB", "RELA", "HASH", "DYNAMIC", "NOTE", "NOBITS",
+            "REL", "SHLIB", "DYNSYM", "LOPROC", "HIPROC", "LOUSER", "HIUSER"]
+
 e_ident_class = ["", "x86", "x86_64"]
 e_ident_data  = ["", "little", "big"]
 e_ident_osabi = ["system v", "hp-ux", "netBSD", "linux", "solaris", "aix",
@@ -137,12 +140,18 @@ class Elf(object):
         # each string is divided by a NULL byte, need to remove the junk from list
         strtab = [ s for s in strtab.decode().split("\x00") if len(s) > 0]
 
+        # assign section header names
         for k,v in enumerate(strtab):
             # first string is the .shstrtab, assign to correct index
             if k == 0:
                 sh_hdrs[stridx]["sh_name"] = v
             else:
                 sh_hdrs[k]["sh_name"] = v
+
+        # assign section header types
+        for sh in sh_hdrs:
+            type_num = sh["sh_type"]
+            sh["sh_type"] = sh_types[type_num]
 
         self.sh_hdrs = sh_hdrs
 
