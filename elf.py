@@ -7,6 +7,7 @@ e_fields  = ["e_ident_mag", "e_ident_class", "e_ident_data", "e_ident_version",
              "e_ident_osabi", "e_ident_abiversion", "e_type", "e_machine",
              "e_version", "e_entry", "e_phoff", "e_shoff", "e_flags", "e_ehsize",
              "e_phentsize", "e_phnum", "e_shentsize", "e_shnum", "e_shstrndx"]
+
 sh_fields = ["sh_name", "sh_type", "sh_flags", "sh_addr", "sh_offset",
              "sh_size", "sh_link", "sh_info", "sh_addralign", "sh_entsize"]
 

@@ -33,13 +33,13 @@ if __name__ == "__main__":
     if fmt == None:
         exit(1)
 
+    fmt.file_header()
+    fmt.section_headers()
+
     if args.header:
-        fmt.file_header()
         fmt.print_file_header()
 
     if args.section_header:
-        fmt.file_header()
-        fmt.section_headers()
         fmt.print_section_headers()
 
     if args.shellcode_file:
