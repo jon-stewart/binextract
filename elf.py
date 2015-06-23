@@ -209,7 +209,7 @@ class Elf(object):
 
                 shellcode = ""
                 for i in code:
-                    if i < 0xf:
+                    if i <= 0xf:
                         shellcode += "\\x0%x" % i
                     else:
                         shellcode += "\\x%x" % i
