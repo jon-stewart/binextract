@@ -217,6 +217,8 @@ class Elf(object):
                 print("Shellcode:")
                 print(shellcode, "\n")
 
+                print("Number of bytes : {0}".format(len(code)))
+
                 try:
                     with open(sc_path, "wb") as fp:
                         fp.write(chunk)
