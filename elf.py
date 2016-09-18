@@ -18,8 +18,8 @@ e_names = ["magic", "class", "endian", "orig elf", "system", "abi ver", "type",
 
 sh_names = ["name", "type", "flags", "addr", "offset", "size", "link", "info", "align", "entsize"]
 
-sh_types = ["NULL", "PROGBITS", "SYMTAB", "STRTAB", "RELA", "HASH", "DYNAMIC", "NOTE", "NOBITS",
-            "REL", "SHLIB", "DYNSYM", "LOPROC", "HIPROC", "LOUSER", "HIUSER"]
+sh_types = ["NULL", "PROGBITS", "SYMTAB", "STRTAB", "RELA", "HASH", "DYNAMIC",
+            "NOTE", "NOBITS", "REL", "SHLIB", "DYNSYM", "LOPROC", "HIPROC", "LOUSER", "HIUSER"]
 
 e_ident_class = ["", "x86", "x86_64"]
 e_ident_data  = ["", "little", "big"]
@@ -137,24 +137,23 @@ class Elf(object):
         size   = shstrtab["sh_size"]
         strtab = self.data[offset:offset + size]
 
-        # each string is divided by a NULL byte, need to remove the junk from list
-        strtab = [ s for s in strtab.decode().split("\x00") if len(s) > 0]
-
-        # sh_name holds an offset into the strtab for its string
-        strtab_dict = {}
-        idx = 1
-        for name in strtab:
-            strtab_dict[idx] = name
-            idx += len(name) + 1
-
         # assign section header names - first is NULL
         for sh in sh_hdrs[1:]:
-            idx = sh["sh_name"]
-            sh["sh_name"] = strtab_dict[idx]
+            i   = 0
+            off = sh["sh_name"]
+            for c in strtab[off:].decode():
+                if c == "\x00":
+                    break
+                i += 1
+            sh["sh_name"] = strtab[off:off + i]
 
         # assign section header types
+        print(len(sh_types))
+        print(sh_types)
         for hdr in sh_hdrs:
+            print(hdr)
             type_num = hdr["sh_type"]
+            print(type_num)
             hdr["sh_type"] = sh_types[type_num]
 
         self.sh_hdrs = sh_hdrs
